@@ -17,14 +17,18 @@ export default function ReportsPage() {
 
   useEffect(() => { loadSales(); loadProducts(); }, []);
 
-  // Helper to get Philippines date from UTC timestamp
+  // Helper to get Philippines date from UTC timestamp in YYYY-MM-DD format
   const getPhilippinesDate = (utcTimestamp: string) => {
-    return new Date(utcTimestamp).toLocaleString("en-PH", {
+    const date = new Date(utcTimestamp);
+    const phDateStr = date.toLocaleString("en-US", {
       timeZone: "Asia/Manila",
       year: "numeric",
       month: "2-digit",
       day: "2-digit"
-    }).split(",")[0].split("/").reverse().join("-"); // Convert MM/DD/YYYY to YYYY-MM-DD
+    });
+    // Format is MM/DD/YYYY, convert to YYYY-MM-DD
+    const [month, day, year] = phDateStr.split("/");
+    return `${year}-${month}-${day}`;
   };
 
   // Filter sales by date range (using Philippines timezone)

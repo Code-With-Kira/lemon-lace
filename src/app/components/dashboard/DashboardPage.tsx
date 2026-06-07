@@ -14,25 +14,32 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Helper to get Philippines date from UTC timestamp
+  // Helper to get Philippines date from UTC timestamp in YYYY-MM-DD format
   const getPhilippinesDate = (utcTimestamp: string) => {
-    return new Date(utcTimestamp).toLocaleString("en-PH", {
+    const date = new Date(utcTimestamp);
+    const phDateStr = date.toLocaleString("en-US", {
       timeZone: "Asia/Manila",
       year: "numeric",
       month: "2-digit",
       day: "2-digit"
-    }).split(",")[0].split("/").reverse().join("-"); // Convert MM/DD/YYYY to YYYY-MM-DD
+    });
+    // Format is MM/DD/YYYY, convert to YYYY-MM-DD
+    const [month, day, year] = phDateStr.split("/");
+    return `${year}-${month}-${day}`;
   };
 
-  // Get current date in Philippines timezone
+  // Get current date in Philippines timezone in YYYY-MM-DD format
   const getTodayInPhilippines = () => {
     const now = new Date();
-    return now.toLocaleString("en-PH", {
+    const phDateStr = now.toLocaleString("en-US", {
       timeZone: "Asia/Manila",
       year: "numeric",
       month: "2-digit",
       day: "2-digit"
-    }).split(",")[0].split("/").reverse().join("-");
+    });
+    // Format is MM/DD/YYYY, convert to YYYY-MM-DD
+    const [month, day, year] = phDateStr.split("/");
+    return `${year}-${month}-${day}`;
   };
 
   const load = async () => {
@@ -61,24 +68,28 @@ export default function DashboardPage() {
         .reduce((sum: number, s: any) => sum + s.total_amount, 0);
 
       const weekAgoPH = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const weekAgoDateStr = weekAgoPH.toLocaleString("en-PH", {
+      const weekAgoPhStr = weekAgoPH.toLocaleString("en-US", {
         timeZone: "Asia/Manila",
         year: "numeric",
         month: "2-digit",
         day: "2-digit"
-      }).split(",")[0].split("/").reverse().join("-");
+      });
+      const [wMonth, wDay, wYear] = weekAgoPhStr.split("/");
+      const weekAgoDateStr = `${wYear}-${wMonth}-${wDay}`;
 
       const weeklySales = (allSales ?? [])
         .filter((s: any) => getPhilippinesDate(s.created_at) >= weekAgoDateStr)
         .reduce((sum: number, s: any) => sum + s.total_amount, 0);
 
       const monthStartPH = new Date(now.getFullYear(), now.getMonth(), 1);
-      const monthStartDateStr = monthStartPH.toLocaleString("en-PH", {
+      const monthStartPhStr = monthStartPH.toLocaleString("en-US", {
         timeZone: "Asia/Manila",
         year: "numeric",
         month: "2-digit",
         day: "2-digit"
-      }).split(",")[0].split("/").reverse().join("-");
+      });
+      const [mMonth, mDay, mYear] = monthStartPhStr.split("/");
+      const monthStartDateStr = `${mYear}-${mMonth}-${mDay}`;
 
       const monthlySales = (allSales ?? [])
         .filter((s: any) => getPhilippinesDate(s.created_at) >= monthStartDateStr)
@@ -101,12 +112,14 @@ export default function DashboardPage() {
       const dailyChart = [];
       for (let i = 6; i >= 0; i--) {
         const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-        const dateStr = d.toLocaleString("en-PH", {
+        const dPhStr = d.toLocaleString("en-US", {
           timeZone: "Asia/Manila",
           year: "numeric",
           month: "2-digit",
           day: "2-digit"
-        }).split(",")[0].split("/").reverse().join("-");
+        });
+        const [dMonth, dDay, dYear] = dPhStr.split("/");
+        const dateStr = `${dYear}-${dMonth}-${dDay}`;
 
         const amount = (allSales ?? [])
           .filter((s: any) => getPhilippinesDate(s.created_at) === dateStr)
