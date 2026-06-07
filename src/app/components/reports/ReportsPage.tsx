@@ -17,22 +17,27 @@ export default function ReportsPage() {
 
   useEffect(() => { loadSales(); loadProducts(); }, []);
 
-  // Filter sales by date range (accounting for timezone)
+  // Helper to get Philippines date from UTC timestamp
+  const getPhilippinesDate = (utcTimestamp: string) => {
+    return new Date(utcTimestamp).toLocaleString("en-PH", {
+      timeZone: "Asia/Manila",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).split(",")[0].split("/").reverse().join("-"); // Convert MM/DD/YYYY to YYYY-MM-DD
+  };
+
+  // Filter sales by date range (using Philippines timezone)
   const filteredSales = sales.filter((s) => {
-    const saleDate = new Date(s.created_at);
-    // Convert sale UTC time to local date
-    const localDate = new Date(saleDate.getFullYear(), saleDate.getMonth(), saleDate.getDate());
-    const localDateStr = localDate.toISOString().split("T")[0];
-    return localDateStr >= dateFrom && localDateStr <= dateTo;
+    const phDate = getPhilippinesDate(s.created_at);
+    return phDate >= dateFrom && phDate <= dateTo;
   });
 
-  // Group sales by day for charts (using local dates)
+  // Group sales by day for charts (using Philippines timezone dates)
   const dailyData: { date: string; amount: number; count: number }[] = [];
   const dayMap: Record<string, { amount: number; count: number }> = {};
   for (const s of filteredSales) {
-    const saleDate = new Date(s.created_at);
-    const localDate = new Date(saleDate.getFullYear(), saleDate.getMonth(), saleDate.getDate());
-    const d = localDate.toISOString().split("T")[0];
+    const d = getPhilippinesDate(s.created_at);
     if (!dayMap[d]) dayMap[d] = { amount: 0, count: 0 };
     dayMap[d].amount += s.total_amount;
     dayMap[d].count++;
@@ -70,7 +75,7 @@ export default function ReportsPage() {
       ? [["Product", "Category", "Qty Sold", "Revenue"],
          ...productList.map(p => [p.name, p.category, p.qty, p.revenue])]
       : [["Transaction #", "Date", "Payment", "Total"],
-         ...filteredSales.map(s => [s.transaction_number, s.created_at.split("T")[0], s.payment_method, s.total_amount])];
+         ...filteredSales.map(s => [s.transaction_number, getPhilippinesDate(s.created_at), s.payment_method, s.total_amount])];
 
     const csv = rows.map(r => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -189,7 +194,7 @@ export default function ReportsPage() {
                   {filteredSales.map(s => (
                     <tr key={s.id} className="border-b border-pink-50 hover:bg-pink-50/30">
                       <td className="px-4 py-2.5 font-medium text-gray-800">{s.transaction_number}</td>
-                      <td className="px-4 py-2.5 text-gray-600">{s.created_at.split("T")[0]}</td>
+                      <td className="px-4 py-2.5 text-gray-600">{getPhilippinesDate(s.created_at)}</td>
                       <td className="px-4 py-2.5 text-gray-600">{s.items?.length ?? 0}</td>
                       <td className="px-4 py-2.5 text-gray-600">{s.payment_method}</td>
                       <td className="px-4 py-2.5 font-semibold text-pink-600">{fmt(s.total_amount)}</td>

@@ -14,42 +14,76 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // Helper to get Philippines date from UTC timestamp
+  const getPhilippinesDate = (utcTimestamp: string) => {
+    return new Date(utcTimestamp).toLocaleString("en-PH", {
+      timeZone: "Asia/Manila",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).split(",")[0].split("/").reverse().join("-"); // Convert MM/DD/YYYY to YYYY-MM-DD
+  };
+
+  // Get current date in Philippines timezone
+  const getTodayInPhilippines = () => {
+    const now = new Date();
+    return now.toLocaleString("en-PH", {
+      timeZone: "Asia/Manila",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).split(",")[0].split("/").reverse().join("-");
+  };
+
   const load = async () => {
     if (!user?.id) return;
     setLoading(true);
     try {
       const now = new Date();
-      // Get today's start in Philippine timezone, then convert to UTC for query
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const todayStr = todayStart.toISOString();
-      const tomorrowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-      const tomorrowStr = tomorrowStart.toISOString();
-      const weekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-      const weekAgoStr = weekAgo.toISOString();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const monthStartStr = monthStart.toISOString();
 
       const [
         { data: products },
         { data: allSales },
-        { data: todaySalesData },
-        { data: weeklySalesData },
-        { data: monthlySalesData },
       ] = await Promise.all([
         supabase.from("products").select("*").eq("user_id", user.id),
         supabase.from("sales").select("*, sale_items(*)").eq("user_id", user.id).order("created_at", { ascending: false }),
-        supabase.from("sales").select("total_amount").eq("user_id", user.id).gte("created_at", todayStr).lt("created_at", tomorrowStr),
-        supabase.from("sales").select("total_amount").eq("user_id", user.id).gte("created_at", weekAgoStr),
-        supabase.from("sales").select("total_amount").eq("user_id", user.id).gte("created_at", monthStartStr),
       ]);
 
       const totalInventoryValue = (products ?? []).reduce(
         (sum: number, p: any) => sum + p.price * p.stock_quantity, 0
       );
       const lowStockList = (products ?? []).filter((p: any) => p.stock_quantity <= 5);
-      const todaySales = (todaySalesData ?? []).reduce((s: number, t: any) => s + t.total_amount, 0);
-      const weeklySales = (weeklySalesData ?? []).reduce((s: number, t: any) => s + t.total_amount, 0);
-      const monthlySales = (monthlySalesData ?? []).reduce((s: number, t: any) => s + t.total_amount, 0);
+
+      // Calculate sales using Philippines timezone dates
+      const todayPH = getTodayInPhilippines();
+      const todaySales = (allSales ?? [])
+        .filter((s: any) => getPhilippinesDate(s.created_at) === todayPH)
+        .reduce((sum: number, s: any) => sum + s.total_amount, 0);
+
+      const now = new Date();
+      const weekAgoPH = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const weekAgoDateStr = weekAgoPH.toLocaleString("en-PH", {
+        timeZone: "Asia/Manila",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).split(",")[0].split("/").reverse().join("-");
+
+      const weeklySales = (allSales ?? [])
+        .filter((s: any) => getPhilippinesDate(s.created_at) >= weekAgoDateStr)
+        .reduce((sum: number, s: any) => sum + s.total_amount, 0);
+
+      const monthStartPH = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthStartDateStr = monthStartPH.toLocaleString("en-PH", {
+        timeZone: "Asia/Manila",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).split(",")[0].split("/").reverse().join("-");
+
+      const monthlySales = (allSales ?? [])
+        .filter((s: any) => getPhilippinesDate(s.created_at) >= monthStartDateStr)
+        .reduce((sum: number, s: any) => sum + s.total_amount, 0);
 
       // Best selling products
       const productSales: Record<string, { name: string; count: number; revenue: number }> = {};
@@ -64,17 +98,22 @@ export default function DashboardPage() {
       }
       const bestSelling = Object.values(productSales).sort((a, b) => b.count - a.count).slice(0, 5);
 
-      // Daily chart last 7 days - use local timezone dates
+      // Daily chart last 7 days - use Philippines timezone dates
       const dailyChart = [];
       for (let i = 6; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-        const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
-        const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).toISOString();
+        const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        const dateStr = d.toLocaleString("en-PH", {
+          timeZone: "Asia/Manila",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).split(",")[0].split("/").reverse().join("-");
+
         const amount = (allSales ?? [])
-          .filter((s: any) => s.created_at >= dayStart && s.created_at < dayEnd)
+          .filter((s: any) => getPhilippinesDate(s.created_at) === dateStr)
           .reduce((sum: number, s: any) => sum + s.total_amount, 0);
-        const ds = d.toISOString().split("T")[0];
-        dailyChart.push({ date: ds, amount });
+
+        dailyChart.push({ date: dateStr, amount });
       }
 
       // Category chart
