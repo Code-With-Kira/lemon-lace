@@ -19,9 +19,15 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const now = new Date();
-      const todayStr = now.toISOString().split("T")[0];
-      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      // Get today's start in Philippine timezone, then convert to UTC for query
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const todayStr = todayStart.toISOString();
+      const tomorrowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const tomorrowStr = tomorrowStart.toISOString();
+      const weekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+      const weekAgoStr = weekAgo.toISOString();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthStartStr = monthStart.toISOString();
 
       const [
         { data: products },
@@ -32,9 +38,9 @@ export default function DashboardPage() {
       ] = await Promise.all([
         supabase.from("products").select("*").eq("user_id", user.id),
         supabase.from("sales").select("*, sale_items(*)").eq("user_id", user.id).order("created_at", { ascending: false }),
-        supabase.from("sales").select("total_amount").eq("user_id", user.id).gte("created_at", `${todayStr}T00:00:00`),
-        supabase.from("sales").select("total_amount").eq("user_id", user.id).gte("created_at", weekAgo),
-        supabase.from("sales").select("total_amount").eq("user_id", user.id).gte("created_at", monthStart),
+        supabase.from("sales").select("total_amount").eq("user_id", user.id).gte("created_at", todayStr).lt("created_at", tomorrowStr),
+        supabase.from("sales").select("total_amount").eq("user_id", user.id).gte("created_at", weekAgoStr),
+        supabase.from("sales").select("total_amount").eq("user_id", user.id).gte("created_at", monthStartStr),
       ]);
 
       const totalInventoryValue = (products ?? []).reduce(
@@ -58,14 +64,16 @@ export default function DashboardPage() {
       }
       const bestSelling = Object.values(productSales).sort((a, b) => b.count - a.count).slice(0, 5);
 
-      // Daily chart last 7 days
+      // Daily chart last 7 days - use local timezone dates
       const dailyChart = [];
       for (let i = 6; i >= 0; i--) {
-        const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-        const ds = d.toISOString().split("T")[0];
+        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+        const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
+        const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).toISOString();
         const amount = (allSales ?? [])
-          .filter((s: any) => s.created_at.startsWith(ds))
+          .filter((s: any) => s.created_at >= dayStart && s.created_at < dayEnd)
           .reduce((sum: number, s: any) => sum + s.total_amount, 0);
+        const ds = d.toISOString().split("T")[0];
         dailyChart.push({ date: ds, amount });
       }
 

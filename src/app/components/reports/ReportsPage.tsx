@@ -17,16 +17,22 @@ export default function ReportsPage() {
 
   useEffect(() => { loadSales(); loadProducts(); }, []);
 
+  // Filter sales by date range (accounting for timezone)
   const filteredSales = sales.filter((s) => {
-    const d = s.created_at.split("T")[0];
-    return d >= dateFrom && d <= dateTo;
+    const saleDate = new Date(s.created_at);
+    // Convert sale UTC time to local date
+    const localDate = new Date(saleDate.getFullYear(), saleDate.getMonth(), saleDate.getDate());
+    const localDateStr = localDate.toISOString().split("T")[0];
+    return localDateStr >= dateFrom && localDateStr <= dateTo;
   });
 
-  // Group sales by day for charts
+  // Group sales by day for charts (using local dates)
   const dailyData: { date: string; amount: number; count: number }[] = [];
   const dayMap: Record<string, { amount: number; count: number }> = {};
   for (const s of filteredSales) {
-    const d = s.created_at.split("T")[0];
+    const saleDate = new Date(s.created_at);
+    const localDate = new Date(saleDate.getFullYear(), saleDate.getMonth(), saleDate.getDate());
+    const d = localDate.toISOString().split("T")[0];
     if (!dayMap[d]) dayMap[d] = { amount: 0, count: 0 };
     dayMap[d].amount += s.total_amount;
     dayMap[d].count++;
