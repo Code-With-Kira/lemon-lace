@@ -85,7 +85,7 @@ export default function SalesPage() {
                 {filtered.map((s) => (
                   <tr key={s.id} className="border-b border-pink-50 hover:bg-pink-50/40 transition-colors">
                     <td className="px-4 py-3 font-semibold text-gray-800">{s.transaction_number}</td>
-                    <td className="px-4 py-3 text-gray-600 text-sm">{new Date(s.created_at).toLocaleString()}</td>
+                    <td className="px-4 py-3 text-gray-600 text-sm">{new Date(s.created_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" })}</td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{s.items?.length ?? 0} item(s)</td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${paymentColor[s.payment_method] ?? "bg-gray-100 text-gray-600"}`}>
@@ -111,7 +111,7 @@ export default function SalesPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-bold text-gray-800">{s.transaction_number}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{new Date(s.created_at).toLocaleString()}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{new Date(s.created_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" })}</p>
                   </div>
                   <button onClick={() => setViewSale(s)} className="p-2 rounded-xl hover:bg-pink-100 text-pink-500 min-h-[44px] min-w-[44px] flex items-center justify-center">
                     <Receipt className="w-4 h-4" />

@@ -254,7 +254,7 @@ export default function DashboardPage() {
               <div key={txn.id} className="flex items-center justify-between py-2 border-b border-pink-50 last:border-0">
                 <div>
                   <p className="text-sm font-medium text-gray-800">{txn.transaction_number}</p>
-                  <p className="text-xs text-gray-500">{new Date(txn.created_at).toLocaleString()} · {txn.payment_method}</p>
+                  <p className="text-xs text-gray-500">{new Date(txn.created_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" })} · {txn.payment_method}</p>
                 </div>
                 <span className="font-bold text-pink-600">{fmt(txn.total_amount)}</span>
               </div>

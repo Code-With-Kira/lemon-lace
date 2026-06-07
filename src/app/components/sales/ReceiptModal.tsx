@@ -33,7 +33,7 @@ export default function ReceiptModal({ sale, onClose }: Props) {
             <p className="text-sm text-gray-500">Snacks and Drinks</p>
             <div className="border-t border-dashed border-gray-300 mt-3 mb-3" />
             <p className="font-mono text-xs text-gray-500">Transaction #: <strong>{sale.transaction_number}</strong></p>
-            <p className="font-mono text-xs text-gray-500">{new Date(sale.created_at).toLocaleString()}</p>
+            <p className="font-mono text-xs text-gray-500">{new Date(sale.created_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" })}</p>
           </div>
 
           {/* Items */}
