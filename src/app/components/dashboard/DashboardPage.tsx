@@ -60,7 +60,6 @@ export default function DashboardPage() {
         .filter((s: any) => getPhilippinesDate(s.created_at) === todayPH)
         .reduce((sum: number, s: any) => sum + s.total_amount, 0);
 
-      const now = new Date();
       const weekAgoPH = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       const weekAgoDateStr = weekAgoPH.toLocaleString("en-PH", {
         timeZone: "Asia/Manila",
